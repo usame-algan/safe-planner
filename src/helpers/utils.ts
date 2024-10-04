@@ -1,16 +1,6 @@
-import { Edge, useReactFlow } from '@xyflow/react';
-import { Node } from '@xyflow/react/dist/esm/types';
-import { GeneralHelpers } from '@xyflow/react/dist/esm/types/instance';
+import { Edge, Node, GeneralHelpers } from '@xyflow/react';
 
-export const shortenAddress = (address: string, length = 4): string => {
-  if (!address) {
-    return '';
-  }
-
-  return `${address.slice(0, length + 2)}...${address.slice(-length)}`;
-};
-
-export function downloadCSV(content, fileName) {
+export function downloadCSV(content: string, fileName: string) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
 
@@ -34,7 +24,7 @@ export function exportData(nodes: Node[], edges: Edge[]) {
 
   const safes = nodes.filter((node) => node.type === 'safe');
 
-  const nodeMap = new Map<string, unknown>();
+  const nodeMap = new Map<string, Node>();
   nodes.forEach((node) => {
     nodeMap.set(node.id, node);
   });
@@ -46,7 +36,8 @@ export function exportData(nodes: Node[], edges: Edge[]) {
     // For each edge, get the source node (wallet)
     const owners = relatedEdges
       .map((edge) => {
-        const ownerNode = nodeMap.get(edge.source);
+        const ownerNode: Node | undefined = nodeMap.get(edge.source);
+
         if (ownerNode) {
           const name = ownerNode.data.name;
           const address = ownerNode.data.address;
@@ -110,9 +101,9 @@ export function importData(
     return;
   }
 
-  const safeNodes = [];
-  const walletNodes = [];
-  const edges = [];
+  const safeNodes: Node[] = [];
+  const walletNodes: Node[] = [];
+  const edges: Edge[] = [];
 
   lines.forEach((line, index) => {
     // Split the line into columns, considering quoted fields

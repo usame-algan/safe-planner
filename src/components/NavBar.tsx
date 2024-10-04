@@ -19,6 +19,7 @@ const NavBar: FC = () => {
     };
 
     if (type === 'safe') {
+      // @ts-expect-error Unresolved variable network
       newNode.data.network = 1;
     }
 

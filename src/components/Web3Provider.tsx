@@ -1,4 +1,4 @@
-import { WagmiProvider, createConfig, http } from 'wagmi';
+import { WagmiProvider, createConfig, http, Config } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
@@ -17,9 +17,9 @@ const config = createConfig(
 
 const queryClient = new QueryClient();
 
-export const Web3Provider = ({ children }) => {
+export const Web3Provider = ({ children }: { children: JSX.Element }) => {
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config as Config}>
       <QueryClientProvider client={queryClient}>
         <ConnectKitProvider>{children}</ConnectKitProvider>
       </QueryClientProvider>
