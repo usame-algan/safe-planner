@@ -19,12 +19,13 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
-import { useChains } from 'connectkit';
+import { useChains, useModal } from 'connectkit';
 import { toHex } from 'viem';
 
 import { type SafeNode } from './types';
 import styles from './WalletNode.module.css';
 import NameInput from '../components/NameInput.tsx';
+import { useAccount } from 'wagmi';
 
 const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.1.1', '1.1.0', '1.0.0'];
 
@@ -33,8 +34,10 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
   const [saltNonce, setSaltNonce] = useState<string>(Date.now().toString());
   const [threshold, setThreshold] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { isConnected } = useAccount();
   const { updateNodeData } = useReactFlow();
   const chains = useChains();
+  const { setOpen } = useModal();
 
   const connections = useHandleConnections({
     type: 'target',
@@ -72,6 +75,8 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
   }, [ownerAddresses.length]);
 
   useEffect(() => {
+    if (!isConnected) return;
+
     const predictAddress = async () => {
       if (ownerAddresses.length === 0 || threshold === 0 || !data.network) {
         updateNodeData(id, { address: null });
@@ -100,7 +105,16 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
     };
 
     predictAddress();
-  }, [threshold, saltNonce, safeVersion, id, ownerAddresses, updateNodeData, data.network]);
+  }, [
+    threshold,
+    saltNonce,
+    safeVersion,
+    id,
+    ownerAddresses,
+    updateNodeData,
+    data.network,
+    isConnected,
+  ]);
 
   const deploySafe = async () => {
     if (!data.network) return;
@@ -224,7 +238,7 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
         <Handle type="source" position={Position.Right} />
       </div>
       <div className={styles.footer}>
-        {data.address && (
+        {isConnected && data.address ? (
           <Stack direction="row" alignItems="center" gap={1}>
             <p className={styles.text}>
               <b style={{ marginBottom: '4px', display: 'block' }}>Safe Address:</b>
@@ -241,6 +255,17 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
               {isLoading ? <CircularProgress size={16} /> : 'Deploy'}
             </Button>
           </Stack>
+        ) : (
+          <Button
+            sx={{ textTransform: 'initial', height: '30px' }}
+            size="small"
+            variant="contained"
+            onClick={() => setOpen(true)}
+            disableElevation
+            disabled={isLoading}
+          >
+            Connect wallet
+          </Button>
         )}
 
         <Handle type="target" position={Position.Bottom} id="target-1" />
