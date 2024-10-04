@@ -1,0 +1,10 @@
+.wrapper {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.logotype {
+  font-weight: bold;
+  font-size: 1.25rem;
+}

@@ -1,0 +1,93 @@
+.container {
+  background: white;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid black;
+  box-shadow: 6px 6px 0 1px rgba(0, 0, 0, 1) !important;
+}
+
+.header {
+  padding: 0.75rem 1rem; /* Increased padding */
+  line-height: 1;
+  background-color: #f8f8f8; /* Light gray background */
+  display: flex; /* Added flex display */
+  align-items: center; /* Vertically center content */
+  justify-content: space-between; /* Space between title and toggle */
+}
+
+.walletHeader {
+  background-color: #ffd166;
+  color: black;
+}
+
+.safeHeader {
+  background-color: #06d6a0;
+  color: black;
+}
+
+.moduleHeader {
+  background-color: #ef476f;
+  color: black;
+}
+
+.footer {
+  padding: 0.75rem 1rem; /* Increased padding */
+  line-height: 1;
+  border-top:1px solid #e0e0e0; /* Lighter border color */
+  display: flex; /* Added flex display */
+  align-items: center; /* Vertically center content */
+  justify-content: space-between; /* Space between title and toggle */
+}
+
+.body {
+  padding: 1rem; /* Increased padding */
+  border-bottom-left-radius: 10px; /* Rounded bottom corners */
+  border-bottom-right-radius: 10px;
+  position: relative;
+}
+
+.nameInput {
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0;
+  border-radius: 3px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: monospace;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.addressInput {
+  font-size: 0.875rem;
+}
+
+.nameInput:focus {
+  border: 1px solid #007bff;
+  font-weight: normal;
+  cursor: text;
+}
+
+/* New styles for the color display and toggle */
+.colorDisplay {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+
+.colorValue {
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.text {
+  font-size: 0.75rem;
+  padding: 0;
+  margin: 0;
+}
+
+.address {
+  font-family: monospace;
+  font-size: 0.75rem;
+}
