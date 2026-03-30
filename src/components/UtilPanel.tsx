@@ -1,6 +1,6 @@
 import { Panel, useReactFlow } from '@xyflow/react';
 import { exportData, importData } from '../helpers/utils.ts';
-import { MouseEvent, useRef, useState } from 'react';
+import { type MouseEvent, useRef, useState } from 'react';
 import { ConnectKitButton } from 'connectkit';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 
@@ -66,6 +66,7 @@ const UtilPanel = () => {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <title>Open utilities menu</title>
             <path
               d="M4 6H20M4 12H20M4 18H20"
               stroke="#000000"

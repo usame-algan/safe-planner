@@ -3,7 +3,7 @@ import type { NodeTypes } from '@xyflow/react';
 import { WalletNode } from './WalletNode';
 import { SafeNode } from './SafeNode';
 import { ModuleNode } from './ModuleNode';
-import { AppNode } from './types';
+import type { AppNode } from './types';
 
 export const initialNodes: AppNode[] = [
   {

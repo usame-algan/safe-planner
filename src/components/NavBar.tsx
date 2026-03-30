@@ -1,4 +1,4 @@
-import { FC, type MouseEvent, useState } from 'react';
+import { type FC, type MouseEvent, useState } from 'react';
 import { Panel, useReactFlow } from '@xyflow/react';
 import { Menu, MenuItem } from '@mui/material';
 import { SafeModule } from '../nodes/types.ts';
@@ -8,7 +8,21 @@ const NavBar: FC = () => {
   const { addNodes } = useReactFlow();
 
   const addNode = (type: 'wallet' | 'safe') => {
-    const newNode = {
+    if (type === 'safe') {
+      addNodes({
+        id: `${type}-${Date.now()}`,
+        type,
+        position: { x: Math.random() * 500, y: Math.random() * 500 },
+        data: {
+          name: `New ${type}`,
+          network: 1,
+        },
+      });
+
+      return;
+    }
+
+    addNodes({
       id: `${type}-${Date.now()}`,
       type,
       position: { x: Math.random() * 500, y: Math.random() * 500 },
@@ -16,14 +30,7 @@ const NavBar: FC = () => {
         name: `New ${type}`,
         address: '0xd8da6bf26964af9d7eed9e03e53415d37aa96045', // vitalik.eth
       },
-    };
-
-    if (type === 'safe') {
-      // @ts-expect-error Unresolved variable network
-      newNode.data.network = 1;
-    }
-
-    addNodes(newNode);
+    });
   };
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -50,13 +57,24 @@ const NavBar: FC = () => {
   return (
     <Panel position="top-center">
       <div className={style.navBar}>
-        <button onClick={() => addNode('wallet')} className={`${style.navItem}`} title="Add Wallet">
+        <button
+          type="button"
+          onClick={() => addNode('wallet')}
+          className={`${style.navItem}`}
+          title="Add Wallet"
+        >
           New Wallet
         </button>
-        <button onClick={() => addNode('safe')} className={`${style.navItem}`} title="Add Safe">
+        <button
+          type="button"
+          onClick={() => addNode('safe')}
+          className={`${style.navItem}`}
+          title="Add Safe"
+        >
           New Safe
         </button>
         <button
+          type="button"
           onClick={handleClick}
           className={`${style.navItem} ${style.hidden}`}
           title="Add Safe"

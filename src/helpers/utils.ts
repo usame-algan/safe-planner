@@ -1,4 +1,4 @@
-import { Edge, Node, GeneralHelpers } from '@xyflow/react';
+import type { Edge, GeneralHelpers, Node } from '@xyflow/react';
 
 export function downloadCSV(content: string, fileName: string) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });

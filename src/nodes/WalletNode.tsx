@@ -1,11 +1,11 @@
 import { useCallback, type ChangeEvent } from 'react';
-import { Handle, NodeProps, Position, useReactFlow } from '@xyflow/react';
-import { type WalletNode } from './types';
+import { Handle, type NodeProps, Position, useReactFlow } from '@xyflow/react';
+import type { WalletNode as WalletNodeData } from './types';
 import styles from './WalletNode.module.css';
 import NameInput from '../components/NameInput.tsx';
 import { TextField } from '@mui/material';
 
-export function WalletNode({ data, id }: NodeProps<WalletNode>) {
+export function WalletNode({ data, id }: NodeProps<WalletNodeData>) {
   const { updateNodeData } = useReactFlow();
 
   const handleAddressChange = useCallback(

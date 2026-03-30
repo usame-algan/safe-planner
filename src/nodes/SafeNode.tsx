@@ -1,14 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
   Handle,
-  NodeProps,
+  type NodeProps,
   Position,
   useHandleConnections,
   useNodesData,
   useReactFlow,
 } from '@xyflow/react';
 import { predictSafeAddress, SafeFactory, SafeProvider } from '@safe-global/protocol-kit';
-import { SafeVersion } from '@safe-global/safe-core-sdk-types/dist/src/types';
+import type { SafeVersion } from '@safe-global/safe-core-sdk-types/dist/src/types';
 import {
   Button,
   CircularProgress,
@@ -22,15 +22,19 @@ import {
 import { useChains, useModal } from 'connectkit';
 import { toHex } from 'viem';
 
-import { type SafeNode } from './types';
+import type { SafeNode as SafeNodeData } from './types';
 import styles from './WalletNode.module.css';
 import NameInput from '../components/NameInput.tsx';
 import { useAccount } from 'wagmi';
+import {
+  DEFAULT_SAFE_VERSION,
+  getDeployableSafeVersions,
+  getSafeVersionSupport,
+  type SupportedSafeVersion,
+} from '../helpers/safeSupport.ts';
 
-const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.1.1', '1.1.0', '1.0.0'];
-
-export function SafeNode({ data, id }: NodeProps<SafeNode>) {
-  const [safeVersion, setSafeVersion] = useState<SafeVersion>('1.4.1');
+export function SafeNode({ data, id }: NodeProps<SafeNodeData>) {
+  const [safeVersion, setSafeVersion] = useState<SafeVersion>(DEFAULT_SAFE_VERSION);
   const [saltNonce, setSaltNonce] = useState<string>(Date.now().toString());
   const [threshold, setThreshold] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -49,6 +53,60 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
       .map((owner) => owner.type !== 'module' && owner.data.address)
       .filter(Boolean) as string[];
   }, [nodesData]);
+
+  const deployableVersions = useMemo(
+    () => getDeployableSafeVersions(data.network),
+    [data.network]
+  );
+
+  const safeVersionSupport = useMemo(
+    () => getSafeVersionSupport(safeVersion as SupportedSafeVersion, data.network),
+    [safeVersion, data.network]
+  );
+
+  const deployDisabledReason = useMemo(() => {
+    if (!safeVersionSupport.canDeploy) {
+      return safeVersionSupport.deployMessage;
+    }
+
+    if (ownerAddresses.length === 0) {
+      return 'Add at least one owner to deploy this Safe.';
+    }
+
+    if (threshold === 0) {
+      return 'Threshold must be at least 1.';
+    }
+
+    return undefined;
+  }, [ownerAddresses.length, safeVersionSupport, threshold]);
+
+  const predictionStatus = useMemo(() => {
+    if (safeVersionSupport.predictMessage) {
+      return safeVersionSupport.predictMessage;
+    }
+
+    if (ownerAddresses.length === 0) {
+      return 'Add at least one owner to calculate a predicted address.';
+    }
+
+    if (!isConnected) {
+      return 'Connect wallet to calculate the predicted address.';
+    }
+
+    if (isLoading) {
+      return 'Calculating predicted address...';
+    }
+
+    return 'Predicted address unavailable.';
+  }, [isConnected, isLoading, ownerAddresses.length, safeVersionSupport.predictMessage]);
+
+  useEffect(() => {
+    if (deployableVersions.length === 0 || deployableVersions.includes(safeVersion as SupportedSafeVersion)) {
+      return;
+    }
+
+    setSafeVersion(deployableVersions[0]);
+  }, [deployableVersions, safeVersion]);
 
   useEffect(() => {
     const ownerNetwork = nodesData
@@ -75,11 +133,22 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
   }, [ownerAddresses.length]);
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !safeVersionSupport.canPredict) {
+      if (!safeVersionSupport.canPredict) {
+        updateNodeData(id, { address: undefined });
+      }
+      return;
+    }
 
     const predictAddress = async () => {
+      const ethereum = window.ethereum;
+
+      if (!ethereum) {
+        return;
+      }
+
       if (ownerAddresses.length === 0 || threshold === 0 || !data.network) {
-        updateNodeData(id, { address: null });
+        updateNodeData(id, { address: undefined });
         return;
       }
 
@@ -87,7 +156,7 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
 
       try {
         const address = await predictSafeAddress({
-          safeProvider: new SafeProvider({ provider: window.ethereum! }),
+          safeProvider: new SafeProvider({ provider: ethereum }),
           chainId: BigInt(data.network),
           safeAccountConfig: { owners: ownerAddresses, threshold },
           safeDeploymentConfig: {
@@ -99,6 +168,7 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
         updateNodeData(id, { address });
       } catch (error) {
         console.error('Error predicting Safe address:', error);
+        updateNodeData(id, { address: undefined });
       } finally {
         setIsLoading(false);
       }
@@ -114,15 +184,20 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
     updateNodeData,
     data.network,
     isConnected,
+    safeVersionSupport.canPredict,
   ]);
 
   const deploySafe = async () => {
-    if (!data.network) return;
+    if (!data.network || !safeVersionSupport.canDeploy) return;
+
+    const ethereum = window.ethereum;
+
+    if (!ethereum) return;
 
     setIsLoading(true);
 
     try {
-      await window.ethereum.request({
+      await ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [
           {
@@ -132,7 +207,7 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
       });
 
       const safeFactory = await SafeFactory.init({
-        provider: window.ethereum,
+        provider: ethereum,
         safeVersion,
       });
 
@@ -193,10 +268,10 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
                 name: 'safe-version',
                 id: 'safe-version-select',
               }}
-              defaultValue={safeVersion}
+              value={safeVersion}
               onChange={(e) => setSafeVersion(e.target.value as SafeVersion)}
             >
-              {SAFE_VERSIONS.map((version) => (
+              {deployableVersions.map((version) => (
                 <option key={version} value={version}>
                   {version}
                 </option>
@@ -238,24 +313,7 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
         <Handle type="source" position={Position.Right} />
       </div>
       <div className={styles.footer}>
-        {isConnected && data.address ? (
-          <Stack direction="row" alignItems="center" gap={1}>
-            <p className={styles.text}>
-              <b style={{ marginBottom: '4px', display: 'block' }}>Safe Address:</b>
-              <span className={styles.address}>{data.address}</span>
-            </p>
-            <Button
-              sx={{ textTransform: 'initial', height: '30px' }}
-              size="small"
-              variant="contained"
-              onClick={deploySafe}
-              disableElevation
-              disabled={isLoading}
-            >
-              {isLoading ? <CircularProgress size={16} /> : 'Deploy'}
-            </Button>
-          </Stack>
-        ) : (
+        {!isConnected ? (
           <Button
             sx={{ textTransform: 'initial', height: '30px' }}
             size="small"
@@ -266,6 +324,30 @@ export function SafeNode({ data, id }: NodeProps<SafeNode>) {
           >
             Connect wallet
           </Button>
+        ) : (
+          <Stack direction="column" gap={1} sx={{ width: '100%' }}>
+            {data.address ? (
+              <p className={styles.text}>
+                <b style={{ marginBottom: '4px', display: 'block' }}>Safe Address:</b>
+                <span className={styles.address}>{data.address}</span>
+              </p>
+            ) : (
+              <p className={styles.text}>{predictionStatus}</p>
+            )}
+            <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+                {deployDisabledReason && <p className={styles.text}>{deployDisabledReason}</p>}
+              <Button
+                sx={{ textTransform: 'initial', height: '30px', flexShrink: 0 }}
+                size="small"
+                variant="contained"
+                onClick={deploySafe}
+                disableElevation
+                disabled={Boolean(deployDisabledReason) || isLoading}
+              >
+                {isLoading ? <CircularProgress size={16} /> : 'Deploy'}
+              </Button>
+            </Stack>
+          </Stack>
         )}
 
         <Handle type="target" position={Position.Bottom} id="target-1" />

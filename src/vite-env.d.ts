@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { Eip1193Provider } from '@safe-global/protocol-kit';
+import type { Eip1193Provider } from '@safe-global/protocol-kit';
 
 declare global {
   interface Window {
@@ -14,6 +14,7 @@ interface ImportMetaEnv {
   // more env variables...
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: ambient Vite typing declarations are consumed by TypeScript
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
